@@ -59,6 +59,7 @@ const CapturePage = () => {
         confidence: data.confidence,
         nextAction: data.nextAction,
         nextActionHi: data.nextActionHi,
+        remedySteps: data.remedySteps,
       };
       setResult(result);
       setIsAnalyzing(false);
