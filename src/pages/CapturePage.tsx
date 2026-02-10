@@ -4,43 +4,14 @@ import { Camera, Upload, RotateCcw, ArrowLeft, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAssessment, type AssessmentResult } from "@/contexts/AssessmentContext";
-
-// Mock AI analysis — replace with real API call
-const mockAnalyze = (): Promise<AssessmentResult> =>
-  new Promise((resolve) => {
-    const results: AssessmentResult[] = [
-      {
-        injuryType: "Open Wound (Laceration)",
-        injuryTypeHi: "खुला घाव (चीरा)",
-        severity: "critical",
-        confidence: 92,
-        nextAction: "Apply pressure to stop bleeding. Call ambulance immediately.",
-        nextActionHi: "खून रोकने के लिए दबाव लगाएँ। तुरंत एम्बुलेंस बुलाएँ।",
-      },
-      {
-        injuryType: "Suspected Fracture (Swelling)",
-        injuryTypeHi: "संदिग्ध फ्रैक्चर (सूजन)",
-        severity: "moderate",
-        confidence: 78,
-        nextAction: "Immobilize the limb. Apply ice. Visit hospital within 24 hours.",
-        nextActionHi: "अंग को स्थिर करें। बर्फ लगाएँ। 24 घंटे के भीतर अस्पताल जाएँ।",
-      },
-      {
-        injuryType: "Minor Abrasion (Scrape)",
-        injuryTypeHi: "मामूली खरोंच",
-        severity: "minor",
-        confidence: 95,
-        nextAction: "Clean with water. Apply antiseptic. Rest.",
-        nextActionHi: "पानी से साफ़ करें। एंटीसेप्टिक लगाएँ। आराम करें।",
-      },
-    ];
-    setTimeout(() => resolve(results[Math.floor(Math.random() * results.length)]), 2500);
-  });
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const CapturePage = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { setCapturedImage, setResult, setIsAnalyzing } = useAssessment();
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analyzing, setLocalAnalyzing] = useState(false);
@@ -62,12 +33,44 @@ const CapturePage = () => {
     setCapturedImage(preview);
 
     try {
-      const res = await mockAnalyze();
-      setResult(res);
+      const { data, error } = await supabase.functions.invoke("analyze-injury", {
+        body: { imageBase64: preview },
+      });
+
+      if (error) throw error;
+
+      if (!data.isInjury) {
+        toast({
+          title: lang === "hi" ? "कोई चोट नहीं मिली" : "No injury detected",
+          description: lang === "hi" 
+            ? "इस छवि में कोई शारीरिक चोट नहीं दिखाई दे रही। कृपया चोट की स्पष्ट तस्वीर लें।"
+            : "This image doesn't appear to show a physical injury. Please capture a clear photo of the injury.",
+          variant: "destructive",
+        });
+        setLocalAnalyzing(false);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const result: AssessmentResult = {
+        injuryType: data.injuryType,
+        injuryTypeHi: data.injuryTypeHi,
+        severity: data.severity,
+        confidence: data.confidence,
+        nextAction: data.nextAction,
+        nextActionHi: data.nextActionHi,
+      };
+      setResult(result);
       setIsAnalyzing(false);
       setLocalAnalyzing(false);
       navigate("/results");
-    } catch {
+    } catch (err: any) {
+      console.error("Analysis error:", err);
+      toast({
+        title: lang === "hi" ? "विश्लेषण विफल" : "Analysis failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive",
+      });
       setIsAnalyzing(false);
       setLocalAnalyzing(false);
     }
