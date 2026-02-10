@@ -42,8 +42,22 @@ IMPORTANT RULES:
   "severity": "critical" | "moderate" | "minor",
   "confidence": 50-99,
   "nextAction": "1-2 sentence first-aid action in English",
-  "nextActionHi": "Same first-aid action in Hindi"
+  "nextActionHi": "Same first-aid action in Hindi",
+  "remedySteps": [
+    {"icon": "emoji", "en": "Step in English", "hi": "Step in Hindi"},
+    ...
+  ]
 }
+
+The "remedySteps" array MUST contain 4-6 specific, actionable first-aid steps tailored to the EXACT injury shown. Each step must be different and specific to the injury type. Examples:
+
+For a burn: clean water cooling, no ice, no butter/toothpaste, cover with clean cloth, pain relief, when to see doctor.
+For a cut: apply pressure, clean wound, antiseptic, bandage, tetanus warning, elevation.
+For a fracture: immobilize, do not move, splint if possible, ice pack, call ambulance.
+For a sprain: RICE method steps (Rest, Ice, Compress, Elevate).
+For a bruise: ice pack, rest, elevation, monitor for worsening.
+
+Do NOT give generic steps. Each remedy must be specific to the injury you identified.
 
 Severity guidelines:
 - critical: Deep cuts with heavy bleeding, severe burns, suspected spinal/head injuries, compound fractures

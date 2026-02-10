@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState } from "react";
 
 export type SeverityLevel = "critical" | "moderate" | "minor";
 
+export interface RemedyStep {
+  icon: string;
+  en: string;
+  hi: string;
+}
+
 export interface AssessmentResult {
   injuryType: string;
   injuryTypeHi: string;
@@ -9,6 +15,7 @@ export interface AssessmentResult {
   confidence: number;
   nextAction: string;
   nextActionHi: string;
+  remedySteps?: RemedyStep[];
 }
 
 interface AssessmentContextType {

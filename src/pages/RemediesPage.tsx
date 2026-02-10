@@ -2,35 +2,24 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Volume2, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAssessment, type SeverityLevel } from "@/contexts/AssessmentContext";
+import { useAssessment, type SeverityLevel, type RemedyStep } from "@/contexts/AssessmentContext";
 import SeverityBadge from "@/components/SeverityBadge";
 
-interface RemedyStep {
-  icon: string;
-  en: string;
-  hi: string;
-}
-
-const remedyData: Record<SeverityLevel, RemedyStep[]> = {
+const fallbackRemedyData: Record<SeverityLevel, RemedyStep[]> = {
   critical: [
     { icon: "🩸", en: "Apply firm pressure with a clean cloth to stop bleeding", hi: "खून रोकने के लिए साफ कपड़े से मजबूती से दबाएँ" },
-    { icon: "⬆️", en: "Elevate the injured area above heart level", hi: "घायल हिस्से को हृदय के स्तर से ऊपर उठाएँ" },
-    { icon: "🚫", en: "Do NOT remove any embedded objects", hi: "कोई भी फंसी हुई वस्तु न निकालें" },
     { icon: "🚑", en: "Call ambulance (108) immediately", hi: "तुरंत एम्बुलेंस (108) को कॉल करें" },
     { icon: "👁️", en: "Monitor breathing and consciousness", hi: "सांस और होश पर नज़र रखें" },
   ],
   moderate: [
     { icon: "💧", en: "Gently clean wound with clean water", hi: "साफ पानी से घाव को धीरे से साफ करें" },
-    { icon: "🧴", en: "Apply antiseptic solution if available", hi: "यदि उपलब्ध हो तो एंटीसेप्टिक लगाएँ" },
     { icon: "🩹", en: "Cover with a sterile bandage", hi: "एक साफ पट्टी से ढकें" },
-    { icon: "❄️", en: "Apply ice pack to reduce swelling", hi: "सूजन कम करने के लिए बर्फ लगाएँ" },
     { icon: "🏥", en: "Visit hospital within 24 hours", hi: "24 घंटे के भीतर अस्पताल जाएँ" },
   ],
   minor: [
     { icon: "🧊", en: "Rest the injured area", hi: "घायल हिस्से को आराम दें" },
     { icon: "❄️", en: "Apply ice for 15-20 minutes", hi: "15-20 मिनट के लिए बर्फ लगाएँ" },
     { icon: "🩹", en: "Compress with an elastic bandage", hi: "इलास्टिक पट्टी से दबाएँ" },
-    { icon: "⬆️", en: "Elevate the area to reduce swelling", hi: "सूजन कम करने के लिए ऊपर उठाएँ" },
   ],
 };
 
@@ -44,7 +33,9 @@ const RemediesPage = () => {
     return null;
   }
 
-  const steps = remedyData[result.severity];
+  const steps = result.remedySteps && result.remedySteps.length > 0 
+    ? result.remedySteps 
+    : fallbackRemedyData[result.severity];
 
   const handleVoice = () => {
     const text = steps.map((s) => (lang === "hi" ? s.hi : s.en)).join(". ");
