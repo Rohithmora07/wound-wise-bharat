@@ -1,1 +1,4 @@
 project_id = "fpxzkeirmbxrttowtedx"
+
+[functions.analyze-injury]
+verify_jwt = false
