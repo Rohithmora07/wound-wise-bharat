@@ -79,6 +79,8 @@ const CapturePage = () => {
         nextAction: data.nextAction,
         nextActionHi: data.nextActionHi,
         remedySteps: data.remedySteps,
+        doctorType: data.doctorType,
+        doctorTypeHi: data.doctorTypeHi,
       };
       setResult(result);
       setIsAnalyzing(false);
