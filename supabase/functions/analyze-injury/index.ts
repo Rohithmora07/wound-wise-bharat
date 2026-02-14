@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,17 +13,67 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64 } = await req.json();
-    if (!imageBase64) {
-      return new Response(JSON.stringify({ error: "No image provided" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
+
+    if (authError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Input Validation ---
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { imageBase64 } = body;
+
+    if (!imageBase64 || typeof imageBase64 !== "string") {
+      return new Response(
+        JSON.stringify({ error: "No image provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Size limit: ~10MB base64
+    const MAX_SIZE = 13_300_000;
+    if (imageBase64.length > MAX_SIZE) {
+      return new Response(
+        JSON.stringify({ error: "Image too large. Maximum size is 10MB." }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Service configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Strip data URL prefix if present
@@ -97,28 +148,36 @@ Be conservative with confidence scores. Never claim 100% confidence.`;
     );
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "Service is busy. Please try again in a moment." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Service temporarily unavailable." }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway returned ${response.status}`);
+      return new Response(
+        JSON.stringify({ error: "Unable to process request." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error("No content in AI response");
+      console.error("No content in AI response");
+      return new Response(
+        JSON.stringify({ error: "Unable to analyze image. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Parse the JSON from the AI response (strip markdown fences if any)
@@ -131,7 +190,7 @@ Be conservative with confidence scores. Never claim 100% confidence.`;
   } catch (e) {
     console.error("analyze-injury error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Analysis failed" }),
+      JSON.stringify({ error: "Unable to analyze image. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
