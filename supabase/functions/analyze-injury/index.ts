@@ -94,11 +94,24 @@ IMPORTANT RULES:
   "confidence": 50-99,
   "nextAction": "1-2 sentence first-aid action in English",
   "nextActionHi": "Same first-aid action in Hindi",
+  "doctorType": "Specialist doctor name in English",
+  "doctorTypeHi": "Specialist doctor name in Hindi",
   "remedySteps": [
     {"icon": "emoji", "en": "Step in English", "hi": "Step in Hindi"},
     ...
   ]
 }
+
+The "doctorType" field MUST recommend the specific medical specialist who treats this injury. Examples:
+- Burns -> "Plastic Surgeon" / "प्लास्टिक सर्जन"
+- Fractures -> "Orthopedic Surgeon" / "हड्डी रोग विशेषज्ञ"
+- Deep cuts/lacerations -> "General Surgeon" / "जनरल सर्जन"
+- Eye injuries -> "Ophthalmologist" / "नेत्र रोग विशेषज्ञ"
+- Head injuries -> "Neurosurgeon" / "न्यूरोसर्जन"
+- Skin wounds/rashes -> "Dermatologist" / "त्वचा रोग विशेषज्ञ"
+- Animal bites -> "General Surgeon" / "जनरल सर्जन"
+- Dental injuries -> "Oral Surgeon" / "मुख शल्य चिकित्सक"
+- Minor wounds -> "General Physician" / "सामान्य चिकित्सक"
 
 The "remedySteps" array MUST contain 4-6 specific, actionable first-aid steps tailored to the EXACT injury shown. Each step must be different and specific to the injury type. Examples:
 

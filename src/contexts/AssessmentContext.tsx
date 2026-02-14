@@ -16,6 +16,8 @@ export interface AssessmentResult {
   nextAction: string;
   nextActionHi: string;
   remedySteps?: RemedyStep[];
+  doctorType?: string;
+  doctorTypeHi?: string;
 }
 
 interface AssessmentContextType {

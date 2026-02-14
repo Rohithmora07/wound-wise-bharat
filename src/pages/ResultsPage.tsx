@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Stethoscope } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAssessment } from "@/contexts/AssessmentContext";
@@ -69,6 +69,17 @@ const ResultsPage = () => {
                 {lang === "hi" ? result.injuryTypeHi : result.injuryType}
               </p>
             </div>
+            {result.doctorType && (
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {lang === "hi" ? "अनुशंसित विशेषज्ञ" : "Recommended Specialist"}
+                </p>
+                <p className="flex items-center gap-2 text-lg font-bold text-primary">
+                  <Stethoscope className="h-5 w-5" />
+                  {lang === "hi" ? result.doctorTypeHi : result.doctorType}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-semibold uppercase text-muted-foreground">{t("nextAction")}</p>
               <p className="font-medium text-foreground">
